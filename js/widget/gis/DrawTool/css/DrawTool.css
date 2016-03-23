@@ -1,6 +1,13 @@
 .gis_DrawDijit {
 }
 
+.gis_DrawDijit .pickIcon {
+    background-image: url(../images/toolbar_icons.png);
+    background-position: -237px 0;
+    width: 16px;
+    height: 16px;
+}
+
 .gis_DrawDijit .polyIcon {
     background-image: url(../images/toolbar_icons.png);
     background-position: -68px 0;

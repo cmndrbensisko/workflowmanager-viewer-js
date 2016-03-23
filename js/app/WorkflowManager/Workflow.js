@@ -88,12 +88,11 @@ function (
             
             // Execute step button
             this.workflowExecuteStepButton = new Button({
+                label: i18n.workflow.executeStep,
                 id: "workflowExecuteStepButton",
                 name: "workflowExecuteStepButton",
                 disabled: true,
-                iconClass: "executeIcon",
-                "class": "icon-btn",
-                baseClass: "icon-btn",
+                "class": "wide-btn dojo-btn-info",
                 onClick: lang.hitch(this, function () {
                     this.executeStepButtonClicked();
                 })
@@ -102,12 +101,11 @@ function (
 
             // Mark step complete button
             this.workflowMarkStepCompleteButton = new Button({
+                label: i18n.workflow.markStepComplete,
                 id: "workflowMarkStepCompleteButton",
                 name: "workflowMarkStepCompleteButton",
                 disabled: true,
-                iconClass: "markCompleteIcon",
-                "class": "icon-btn",
-                baseClass: "icon-btn",
+                "class": "wide-btn dojo-btn-success",
                 onClick: lang.hitch(this, function () {
                     this.markStepCompleteButtonClicked();
                 })
@@ -116,12 +114,11 @@ function (
             
             // Recreate workflow button
             this.workflowRecreateWorkflowButton = new Button({
+                label: i18n.workflow.recreateWorkflow,
                 id: "workflowRecreateWorkflowButton",
                 name: "workflowRecreateWorkflowButton",
                 disabled: true,
-                iconClass: "refreshWorkflowIcon",
-                "class": "icon-btn",
-                baseClass: "icon-btn",
+                "class": "wide-btn dojo-btn-danger",
                 onClick: lang.hitch(this, function () {
                     recreateWorkflowDialog.show();
                 })
@@ -255,9 +252,7 @@ function (
                 this.currentStepStatus.style.display = "none";
                 this.workflowExecuteStepButton.set("disabled", true);
                 this.workflowMarkStepCompleteButton.set("disabled", true);
-                // recreate button should only be disabled if the job is closed
-                if (this.currentJob.stage == Enum.JobStage.CLOSED)
-                    this.workflowRecreateWorkflowButton.set("disabled", true);
+                this.workflowRecreateWorkflowButton.set("disabled", true);
             }
         },
         
@@ -284,19 +279,21 @@ function (
                 var canExecuteStep = false;
                 var canMarkStepComplete = false;
             
-                if (stepData.stepType.executionType == Enum.StepExecutionType.PROCEDURAL) {// when execution type is procedual
-                    canMarkStepComplete = true;
-                    if (stepData.autoRun) {
-                        canExecuteStep = true;
-                    }
-                } else {// when execution type is NOT procedual
-                    if (stepData.canSkip) {
-                        canMarkStepComplete = true;
-                    } else if (stepData.hasBeenExecuted) {
-                        canMarkStepComplete = true;
-                    }
-                    canExecuteStep = true;
-                }
+				if (this.currentStep.stepType.supportedPlatform !== Enum.StepPlatformType.DESKTOP){
+					if (stepData.stepType.executionType == Enum.StepExecutionType.PROCEDURAL) {// when execution type is procedual
+						canMarkStepComplete = true;
+						if (stepData.autoRun) {
+							canExecuteStep = true;
+						}
+					} else {// when execution type is NOT procedual
+						if (stepData.canSkip) {
+							canMarkStepComplete = true;
+						} else if (stepData.hasBeenExecuted) {
+							canMarkStepComplete = true;
+						}
+						canExecuteStep = true;
+					}
+				}
                 
                 this.updateWorkflowToolsStatus(stepData, canExecuteStep, canMarkStepComplete);
             }

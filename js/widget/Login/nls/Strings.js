@@ -13,8 +13,7 @@ define({
         error: {
             invalidUsername: "Invalid username",
             invalidUsernameOrPassword: "Invalid username or password",
-            invalidPassword: "Invalid password",
-            missingDomain: "User is not part of a domain"
+            invalidPassword: "Invalid password"
         }
     }),
     

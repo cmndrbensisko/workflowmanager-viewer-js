@@ -38,7 +38,7 @@
             <div class="form">
                 <div class="row">
                     <label>${i18n_JobType}:</label>
-                    <div class="query-dropDown-container" data-dojo-attach-point="jobTypesBtn"></div>
+                    <input data-dojo-attach-point="cboJobTypes">
                 </div>
                 <div class="row">
                     <label>${i18n_JobAssignment}:</label>
@@ -88,6 +88,10 @@
                 <div class="row">
                     <label>${i18n_NumberOfJobs}:</label>
                     <input data-dojo-type="dijit/form/NumberSpinner" value="1" data-dojo-props="smallDelta:1, constraints:{min:1,max:100,places:0}" style="width: 80px;" data-dojo-attach-point="propertiesFormNumbersOfJobs" />
+                </div>
+                <div class="row">
+                    <label>${i18n_Prefix}:</label>
+                    <input data-dojo-attach-point="propertiesFormPrefix"></input>
                 </div>
             </div>
         </div>

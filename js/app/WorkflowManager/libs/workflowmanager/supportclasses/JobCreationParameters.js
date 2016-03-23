@@ -4,23 +4,23 @@ define("workflowmanager/supportclasses/JobCreationParameters", [
 ], function(declare, Enum) {
     return declare(null, {
         // instance properties
-        aoi: null,
+        jobTypeId: null,
+        id: null,
+        name: null,
+        startDate: null,
+        dueDate: null,
+        priority: null,
+        dataWorkspaceId: null,
+        parentVersion: null,
+        description: null,
+        ownedBy: null,
+        assignedType: Enum.JobAssignmentType.NONE,
         assignedTo: null,
-        assignedType: null,
+        aoi: null,
+        numJobs: null,
         autoCommitWorkflow: null,
         autoExecute: null,
-        dataWorkspaceId: null,
-        description: null,
-        dueDate: null,
-        id: null,
-        jobTypeId: null,
-        loi: null,
-        name: null,
-        numJobs: null,
-        ownedBy: null,
-        parentJobId: null,
-        parentVersion: null,
-        priority: null,
-        startDate: null
+		prefix: null,
+		suffix: ""
     });
 });

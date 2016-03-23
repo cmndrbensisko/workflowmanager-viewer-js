@@ -59,7 +59,7 @@ function (
         i18n_JobType: i18n.properties.jobType,
         i18n_JobStatus: i18n.properties.jobStatus,
         i18n_JobPercentComplete: i18n.properties.jobPercentComplete,
-        i18n_JobLOI: i18n.properties.jobLOI,
+        i18n_JobAOI: i18n.properties.jobAOI,
         i18n_JobDataWorkspace: i18n.properties.jobDataWorkspace,
         i18n_JobVersion: i18n.properties.jobVersion,
         i18n_JobParentVersion: i18n.properties.jobParentVersion,
@@ -74,8 +74,8 @@ function (
         i18n_JobAssignmentGroup: i18n.properties.jobAssignmentGroup,
         i18n_JobAssignmentUnassigned: i18n.properties.jobAssignmentUnassigned,
         i18n_JobAssignmentUnknownUser: i18n.properties.jobAssignmentUnknownUser,
-        i18n_LoiDefined: i18n.properties.loiDefined,
-        i18n_LoiUndefined: i18n.properties.loiUndefined,
+        i18n_AoiDefined: i18n.properties.aoiDefined,
+        i18n_AoiUndefined: i18n.properties.aoiUndefined,
         i18n_Update: i18n.common.update,
 
         currentUser: null,
@@ -198,26 +198,17 @@ function (
             }, this.propertiesFormDescription);
             this.jobDescriptionTextarea.startup();
         },
-        
-        initialize: function(args) {
+
+        setUserProperties: function (args) {
             this.currentUser = args.user;
             this.currentUserDetails = args.userDetails;
             this.currentUserPrivileges = args.userPrivileges;
-
-            this.users = args.users;
-            this.groups = args.groups;
-
-            // Priorities
-            this.jobPrioritiesSelect.set("store", new Memory({ data: args.jobPriorities, idProperty: "value" }));
-            this.jobPrioritiesSelect.set("placeHolder", "");
         },
-
+        
         setCurrentJob: function (job, autoStatusAssign, serviceInfo) {
             var self = lang.hitch(this);
             // Set initial values
             this.currentJob = job;
-            
-            this.initializingJob = true;
             
             // Check if job is assignable            
             if (this.canAssignJob()) {
@@ -242,10 +233,10 @@ function (
             this.jobStartDateControl.set("value", job.startDate);
             this.jobDueDateControl.set("value", job.dueDate);
 
-            if (job.aoi || job.poi) {
-                this.propertiesFormLOI.innerHTML = this.i18n_LoiDefined;
+            if (job.aoi.rings.length > 0) {
+                this.propertiesFormAOI.innerHTML = this.i18n_AoiDefined;
             } else {
-                this.propertiesFormLOI.innerHTML = this.i18n_LoiUndefined;
+                this.propertiesFormAOI.innerHTML = this.i18n_AoiUndefined;
             };
 
             // Populate Version if versionExist = true
@@ -268,13 +259,11 @@ function (
             switch (job.assignedType) {
                 case 1:
                     this.jobAssignmentTypeUser.set("checked", true);
-                    var user = this.findUser(job.assignedTo, this.assignmentUsersSelect.get("store").data);
-                    if (user)
-                        this.assignmentUsersSelect.set("value", user.userName);
+                    this.assignmentUsersSelect.set("value", job.assignedTo);
                     // If no user was selected, the user does not exist so display Unknown User
                     if (this.assignmentUsersSelect.item == null)
                         this.assignmentUsersSelect.set("displayedValue", this.i18n_JobAssignmentUnknownUser);
-                            break;
+                    break;
                 case 2:
                     this.jobAssignmentTypeGroup.set("checked", true);
                     this.assignmentGroupsSelect.set("value", job.assignedTo);
@@ -287,9 +276,12 @@ function (
             // Ownedby
             //get owner full name
             var ownerFullName;
-            var user = this.findUser(job.ownedBy, serviceInfo.users);
-            if (user)
-                ownerFullName = user.fullName;
+            dojo.some(serviceInfo.users, function (item, index) {
+                if (item.userName == job.ownedBy) {
+                    ownerFullName = item.fullName;
+                    return true;   // found entry, break from the loop
+                }
+            });
             if (!ownerFullName)
                 ownerFullName = this.i18n_JobAssignmentUnknownUser;
             this.cboUsers.innerHTML = ownerFullName;
@@ -316,24 +308,6 @@ function (
 
             // update properties based on user privileges
             this.updatePrivileges();
-            
-            this.initializingJob = false;
-        },
-        
-        findUser: function(username, collection) {
-            if (!username)
-                return null;
-    
-            var foundUser;
-            // Double escape any backslashes in username before being used in the regexp        
-            var regExp = new RegExp("^" + username.replace(/\\/g, "\\\\") + "$", "i");
-            arrayUtil.some(collection, function(item) {
-                 if (regExp.test(item.userName)) {
-                     foundUser = item;
-                     return true;   // found item, break from the loop
-                 }
-            });
-            return foundUser;
         },
         
         updatePrivileges: function () {
@@ -396,7 +370,20 @@ function (
             if (oldValue != this.jobHasActiveHolds)             
                 this.updatePrivileges();
         },
-
+        
+        populateDropdowns: function(args) { 
+            this.jobPrioritiesSelect.set("store", new Memory({ data: args.jobPriorities, idProperty: "value" }));
+            this.jobPrioritiesSelect.set("placeHolder", "");
+        },
+        
+        populateUsers: function (users) {
+            this.users = users;
+        },
+        
+        populateGroups: function (groups) {
+            this.groups = groups;
+        },
+        
         populateAssignableUsers: function() {
             var assignableUsers = [];
             if (this.users && this.users.length > 0) {
@@ -612,16 +599,13 @@ function (
         },
 
         activateUpdateBtn: function () {
-            if (this.initializingJob)
-                return;
-            
             // call this when the user is navigating away
             // tests if the fields are different from the vals set by job
 
             //set assigned to
             switch (this.userAssignedType) {
                 case 0:
-                    this.userAssignedTo = null;
+                    this.userAssignedTo = "";
                     break;
                 case 1:
                     this.userAssignedTo = this.assignmentUsersSelect.get("value");
@@ -632,35 +616,55 @@ function (
             }
 
             //date fix
-            var jobStartDate = null;
-            var jobDueDate = null;
             if (this.currentJob.startDate) {
-                jobStartDate = (this.currentJob.startDate).setHours(12);
+                this.serverStartDate = (this.currentJob.startDate).setHours(12);
+            } else {
+                this.serverStartDate = null;
             }
             if (this.currentJob.dueDate) {
-                jobDueDate = (this.currentJob.dueDate).setHours(12);
+                this.serverDueDate = (this.currentJob.dueDate).setHours(12);
+            } else {
+                this.serverDueDate = null;
             }
 
-            var currentStartDate = null;
-            var currentDueDate = null;
             if (this.jobStartDateControl.get("value") > 72000000) {
-                currentStartDate = (this.jobStartDateControl.get("value")).setHours(12);
+                this.userStartDate = (this.jobStartDateControl.get("value")).setHours(12);
+            } else {
+                this.userStartDate = null;
             }
             if (this.jobDueDateControl.get("value") > 72000000) {
-                currentDueDate = (this.jobDueDateControl.get("value")).setHours(12);
+                this.userDueDate = (this.jobDueDateControl.get("value")).setHours(12);
+            } else {
+                this.userDueDate = null;
             }
-            
-            var priorityVal = this.jobPrioritiesSelect.get("value");
-            var priority = (priorityVal != null && priorityVal != "") ? parseInt(priorityVal) : 0;
-            var description = this.jobDescriptionTextarea.get("value");
+
+            this.serverVals = {
+                assignedType: this.currentJob.assignedType,
+                assignedTo: this.currentJob.assignedTo,
+                priority: this.currentJob.priority,
+                startDate: this.serverStartDate,
+                dueDate: this.serverDueDate,
+                description: this.currentJob.description
+            };
+            this.userVals = {
+                assignedType: this.userAssignedType,
+                assignedTo: this.userAssignedTo,
+                priority: parseInt(this.jobPrioritiesSelect.get("value")),
+                startDate: this.userStartDate,
+                dueDate: this.userDueDate,
+                description: this.jobDescriptionTextarea.get("value")
+            };
+
+            //console.log(this.serverVals);
+            //console.log(this.userVals);
 
             //changes made if
-            if ((this.currentJob.assignedType != this.userAssignedType)
-                || (this.currentJob.assignedTo != this.userAssignedTo)
-                || (this.currentJob.priority != priority)
-                || (jobStartDate != currentStartDate)
-                || (jobDueDate != currentDueDate)
-                || (this.currentJob.description != description)) {
+            if ((this.serverVals.assignedType != this.userVals.assignedType)
+                || (this.serverVals.assignedTo != this.userVals.assignedTo)
+                || (this.serverVals.priority != this.userVals.priority)
+                || (this.serverVals.startDate != this.userVals.startDate)
+                || (this.serverVals.dueDate != this.userVals.dueDate)
+                || (this.serverVals.description != this.userVals.description)) {
                 this.errorContainer.innerHTML = "";
                 this.btnUpdateProperties.set("disabled", false);
                 this.changesMade = true;
@@ -694,7 +698,7 @@ function (
             this.propertiesFormPercentComplete.innerHTML = "";
             this.jobStartDateControl.set("value", "");
             this.jobDueDateControl.set("value", "");
-            this.propertiesFormLOI.innerHTML = "";
+            this.propertiesFormAOI.innerHTML = "";
             this.propertiesFormVersion.innerHTML = "";
             this.propertiesFormParentVersion.innerHTML = "";
 
@@ -767,7 +771,7 @@ function (
             }
 
             //AOI
-            if ((this.currentJob.aoi != this.propertiesFormLOI.innerHTML) && (this.propertiesFormLOI.innerHTML == "")) {
+            if ((this.currentJob.aoi != this.propertiesFormAOI.innerHTML) && (this.propertiesFormAOI.innerHTML == "")) {
                 para.clearAOI = true;
             };
 

@@ -31,7 +31,6 @@ define({
         filter: {
             initialQueryTitle: "Select Query",
             initialReportTitle: "Select Report",
-            initialJobTypeTitle: "Select Job Type",
             createNewJob: "Create New Job",
             createJob: "Create Job",
             findJob: "Find job",
@@ -44,8 +43,7 @@ define({
             queryTypeUser: "User Queries",
             reports: "Reports",
             reportWindow: "Open in New Window",
-            results: "Search Results",
-            uncategorized: "Uncategorized"
+            results: "Search Results"
         },
         
         statistics: {
@@ -113,6 +111,7 @@ define({
             noDataWorkspace: "No Data Workspace",
             noVersion: "No Version",
             numberOfJobs: "Number of jobs",
+			prefix: "Prefix",
             resize: "Resize",
             updateSuccessful: "Properties updated successfully."
         },
